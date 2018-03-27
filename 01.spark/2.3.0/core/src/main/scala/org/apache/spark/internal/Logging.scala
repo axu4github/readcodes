@@ -145,7 +145,8 @@ trait Logging {
         val replLogger = LogManager.getLogger(logName)
         val replLevel = Option(replLogger.getLevel()).getOrElse(Level.WARN)
         System.err.printf("=== replLevel \"%s\".\n", replLevel)
-        System.err.printf("=== rootLogger.getEffectiveLevel() \"%s\".\n", rootLogger.getEffectiveLevel())
+        System.err.printf(
+          "=== rootLogger.getEffectiveLevel() \"%s\".\n", rootLogger.getEffectiveLevel())
         // rootLogger.getEffectiveLevel() = log4j.rootCategory
         if (replLevel != rootLogger.getEffectiveLevel()) {
           if (!silent) {
