@@ -58,6 +58,10 @@ trait Logging {
     if (log.isDebugEnabled) log.debug(msg)
   }
 
+  protected def myLogDebug(msg: => String) {
+    logDebug("=== " + msg)
+  }
+
   protected def logTrace(msg: => String) {
     if (log.isTraceEnabled) log.trace(msg)
   }
@@ -141,12 +145,12 @@ trait Logging {
       if (isInterpreter) {
         // Use the repl's main class to define the default log level when running the shell,
         // overriding the root logger's config if they're different.
-        System.err.printf("=== logName \"%s\".\n", logName)
+        System.err.printf(" === logName \"%s\".\n", logName)
         val replLogger = LogManager.getLogger(logName)
         val replLevel = Option(replLogger.getLevel()).getOrElse(Level.WARN)
-        System.err.printf("=== replLevel \"%s\".\n", replLevel)
+        System.err.printf(" === replLevel \"%s\".\n", replLevel)
         System.err.printf(
-          "=== rootLogger.getEffectiveLevel() \"%s\".\n", rootLogger.getEffectiveLevel())
+          " === rootLogger.getEffectiveLevel() \"%s\".\n", rootLogger.getEffectiveLevel())
         // rootLogger.getEffectiveLevel() = log4j.rootCategory
         if (replLevel != rootLogger.getEffectiveLevel()) {
           if (!silent) {
