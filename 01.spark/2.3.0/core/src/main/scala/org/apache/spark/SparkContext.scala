@@ -447,15 +447,22 @@ class SparkContext(config: SparkConf) extends Logging {
       }
     }
 
+    // - ListenerBus data structure (ListenerBus.scala) -
+    // private[this] val listenersPlusTimers = new CopyOnWriteArrayList[(L, Option[Timer])]
+    // final def addListener(listener: L): Unit = {
+    //   listenersPlusTimers.add((listener, getTimer(listener)))
+    // }
     _listenerBus = new LiveListenerBus(_conf)
 
     // Initialize the app status store and listener before SparkEnv is created so that it gets
     // all events.
     _statusStore = AppStatusStore.createLiveStore(conf)
-    myLogDebug(s"listenerBus addToStatusQueue AppStatusListener.")
+    myLogDebug(s"listenerBus addToStatusQueue('appStatus') AppStatusListener.")
     listenerBus.addToStatusQueue(_statusStore.listener.get)
 
     // Create the Spark execution environment (cache, map output tracker, etc)
+    // SparkEnv.createDriverEnv(conf, isLocal, listenerBus, SparkContext.numDriverCores(master))
+    // def isLocal: Boolean = Utils.isLocalMaster(_conf)
     _env = createSparkEnv(_conf, isLocal, listenerBus)
     SparkEnv.set(_env)
 

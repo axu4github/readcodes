@@ -164,9 +164,17 @@ object SparkEnv extends Logging {
     assert(conf.contains(DRIVER_HOST_ADDRESS),
       s"${DRIVER_HOST_ADDRESS.key} is not set on the driver!")
     assert(conf.contains("spark.driver.port"), "spark.driver.port is not set on the driver!")
+
+    myLogDebug(s"SparkEnv.createDriverEnv.")
     val bindAddress = conf.get(DRIVER_BIND_ADDRESS)
     val advertiseAddress = conf.get(DRIVER_HOST_ADDRESS)
     val port = conf.get("spark.driver.port").toInt
+    myLogDebug(s"bindAddress: ${bindAddress}")
+    myLogDebug(s"advertiseAddress: ${advertiseAddress}")
+    myLogDebug(s"port: ${port}")
+    myLogDebug(s"isLocal: ${isLocal}")
+    myLogDebug(s"numCores: ${numCores}")
+
     val ioEncryptionKey = if (conf.get(IO_ENCRYPTION_ENABLED)) {
       Some(CryptoStreamUtils.createKey(conf))
     } else {
@@ -246,6 +254,7 @@ object SparkEnv extends Logging {
     }
 
     val systemName = if (isDriver) driverSystemName else executorSystemName
+    myLogDebug(s"systemName: ${systemName}")
     val rpcEnv = RpcEnv.create(systemName, bindAddress, advertiseAddress, port.getOrElse(-1), conf,
       securityManager, numUsableCores, !isDriver)
 
