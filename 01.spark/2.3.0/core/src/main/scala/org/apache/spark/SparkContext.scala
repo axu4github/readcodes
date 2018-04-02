@@ -71,6 +71,8 @@ import org.apache.spark.util._
  */
 class SparkContext(config: SparkConf) extends Logging {
 
+  myLogDebug(s"In to new SparkContext(conf)")
+
   // The call site where this SparkContext was constructed.
   private val creationSite: CallSite = Utils.getCallSite()
 
@@ -212,6 +214,33 @@ class SparkContext(config: SparkConf) extends Logging {
   private var _files: Seq[String] = _
   private var _shutdownHookRef: AnyRef = _
   private var _statusStore: AppStatusStore = _
+
+  myLogDebug(s"""SparkContext init private variables (
+                _conf,
+                _eventLogDir,
+                _eventLogCodec,
+                _listenerBus,
+                _env,
+                _statusTracker,
+                _progressBar,
+                _ui,
+                _hadoopConfiguration,
+                _executorMemory,
+                _schedulerBackend,
+                _taskScheduler,
+                _heartbeatReceiver,
+                (volatile) _dagScheduler,
+                _applicationId,
+                _applicationAttemptId,
+                _eventLogger,
+                _executorAllocationManager,
+                _cleaner,
+                _listenerBusStarted,
+                _jars,
+                _files,
+                _shutdownHookRef,
+                _statusStore
+              )""")
 
   /* ------------------------------------------------------------------------------------- *
    | Accessors and public fields. These provide access to the internal state of the        |
@@ -391,11 +420,17 @@ class SparkContext(config: SparkConf) extends Logging {
     _conf.set("spark.executor.id", SparkContext.DRIVER_IDENTIFIER)
 
     _jars = Utils.getUserJars(_conf)
+    var str_jars = _jars.mkString("[", ",", "]")
+    myLogDebug(s"_jars: $str_jars")
+
     _files = _conf.getOption("spark.files").map(_.split(",")).map(_.filter(_.nonEmpty))
       .toSeq.flatten
+    var str_files = _files.mkString("[", ",", "]")
+    myLogDebug(s"_files: $str_files")
 
     _eventLogDir =
       if (isEventLogEnabled) {
+        // val DEFAULT_LOG_DIR = "/tmp/spark-events"
         val unresolvedDir = conf.get("spark.eventLog.dir", EventLoggingListener.DEFAULT_LOG_DIR)
           .stripSuffix("/")
         Some(Utils.resolveURI(unresolvedDir))
@@ -417,6 +452,7 @@ class SparkContext(config: SparkConf) extends Logging {
     // Initialize the app status store and listener before SparkEnv is created so that it gets
     // all events.
     _statusStore = AppStatusStore.createLiveStore(conf)
+    myLogDebug(s"listenerBus addToStatusQueue AppStatusListener.")
     listenerBus.addToStatusQueue(_statusStore.listener.get)
 
     // Create the Spark execution environment (cache, map output tracker, etc)

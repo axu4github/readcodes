@@ -77,6 +77,7 @@ private[spark] class LiveListenerBus(conf: SparkConf) {
 
   /** Add a listener to the application status queue. */
   def addToStatusQueue(listener: SparkListenerInterface): Unit = {
+    // private[scheduler] val APP_STATUS_QUEUE = "appStatus"
     addToQueue(listener, APP_STATUS_QUEUE)
   }
 
@@ -102,6 +103,7 @@ private[spark] class LiveListenerBus(conf: SparkConf) {
         queue.addListener(listener)
 
       case None =>
+        // queues[queue[AsyncEventQueue, ], ]
         val newQueue = new AsyncEventQueue(queue, conf, metrics)
         newQueue.addListener(listener)
         if (started.get()) {

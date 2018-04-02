@@ -59,7 +59,7 @@ trait Logging {
   }
 
   protected def myLogDebug(msg: => String) {
-    logDebug("=== " + msg)
+    logDebug(s"=== $msg ===")
   }
 
   protected def logTrace(msg: => String) {
