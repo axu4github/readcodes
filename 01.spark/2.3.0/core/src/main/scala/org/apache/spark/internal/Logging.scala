@@ -62,6 +62,14 @@ trait Logging {
     logDebug(s"=== $msg ===")
   }
 
+  protected def myLogInitStart(msg: => String) {
+    logDebug(s"====== Initialization $msg START. ======")
+  }
+
+  protected def myLogInitEnd(msg: => String) {
+    logDebug(s"====== Initialization $msg END. ======\n")
+  }
+
   protected def logTrace(msg: => String) {
     if (log.isTraceEnabled) log.trace(msg)
   }
