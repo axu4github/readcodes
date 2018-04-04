@@ -241,6 +241,7 @@ object SparkEnv extends Logging {
       assert(listenerBus != null, "Attempted to create driver SparkEnv with null listener bus!")
     }
 
+    myLogInitStart("SecurityManager")
     val securityManager = new SecurityManager(conf, ioEncryptionKey)
     if (isDriver) {
       securityManager.initializeAuth()
@@ -253,10 +254,15 @@ object SparkEnv extends Logging {
       }
     }
 
+    myLogInitEnd(s"SecurityManager")
+
     val systemName = if (isDriver) driverSystemName else executorSystemName
     myLogDebug(s"systemName: ${systemName}")
+
+    myLogInitStart(s"RpcEnv")
     val rpcEnv = RpcEnv.create(systemName, bindAddress, advertiseAddress, port.getOrElse(-1), conf,
       securityManager, numUsableCores, !isDriver)
+    myLogInitEnd(s"RpcEnv")
 
     // Figure out which port RpcEnv actually bound to in case the original port is 0 or occupied.
     if (isDriver) {
@@ -289,6 +295,7 @@ object SparkEnv extends Logging {
       instantiateClass[T](conf.get(propertyName, defaultClassName))
     }
 
+    myLogInitStart(s"SerializerManager, JavaSerializer")
     val serializer = instantiateClassFromConf[Serializer](
       "spark.serializer", "org.apache.spark.serializer.JavaSerializer")
     logDebug(s"Using serializer: ${serializer.getClass}")
@@ -296,6 +303,8 @@ object SparkEnv extends Logging {
     val serializerManager = new SerializerManager(serializer, conf, ioEncryptionKey)
 
     val closureSerializer = new JavaSerializer(conf)
+
+    myLogInitEnd(s"SerializerManager, JavaSerializer")
 
     def registerOrLookupEndpoint(
         name: String, endpointCreator: => RpcEndpoint):
@@ -308,8 +317,11 @@ object SparkEnv extends Logging {
       }
     }
 
+    myLogInitStart(s"BroadcastManager")
     val broadcastManager = new BroadcastManager(isDriver, conf, securityManager)
+    myLogInitEnd(s"BroadcastManager")
 
+    myLogInitStart(s"MapOutputTrackerMaster")
     val mapOutputTracker = if (isDriver) {
       new MapOutputTrackerMaster(conf, broadcastManager, isLocal)
     } else {
@@ -321,7 +333,9 @@ object SparkEnv extends Logging {
     mapOutputTracker.trackerEndpoint = registerOrLookupEndpoint(MapOutputTracker.ENDPOINT_NAME,
       new MapOutputTrackerMasterEndpoint(
         rpcEnv, mapOutputTracker.asInstanceOf[MapOutputTrackerMaster], conf))
+    myLogInitEnd(s"MapOutputTrackerMaster")
 
+    myLogInitStart(s"ShuffleManager")
     // Let the user specify short names for shuffle managers
     val shortShuffleMgrNames = Map(
       "sort" -> classOf[org.apache.spark.shuffle.sort.SortShuffleManager].getName,
@@ -330,7 +344,9 @@ object SparkEnv extends Logging {
     val shuffleMgrClass =
       shortShuffleMgrNames.getOrElse(shuffleMgrName.toLowerCase(Locale.ROOT), shuffleMgrName)
     val shuffleManager = instantiateClass[ShuffleManager](shuffleMgrClass)
+    myLogInitEnd(s"ShuffleManager")
 
+    myLogInitStart(s"MemoryManager")
     val useLegacyMemoryManager = conf.getBoolean("spark.memory.useLegacyMode", false)
     val memoryManager: MemoryManager =
       if (useLegacyMemoryManager) {
@@ -339,6 +355,9 @@ object SparkEnv extends Logging {
         UnifiedMemoryManager(conf, numUsableCores)
       }
 
+    myLogInitEnd(s"MemoryManager")
+
+    myLogInitStart(s"BlockManager")
     val blockManagerPort = if (isDriver) {
       conf.get(DRIVER_BLOCK_MANAGER_PORT)
     } else {
@@ -359,6 +378,9 @@ object SparkEnv extends Logging {
       serializerManager, conf, memoryManager, mapOutputTracker, shuffleManager,
       blockTransferService, securityManager, numUsableCores)
 
+    myLogInitEnd(s"BlockManager")
+
+    myLogInitStart(s"MetricsSystem")
     val metricsSystem = if (isDriver) {
       // Don't start metrics system right now for Driver.
       // We need to wait for the task scheduler to give us an app ID.
@@ -374,12 +396,16 @@ object SparkEnv extends Logging {
       ms
     }
 
+    myLogInitEnd(s"MetricsSystem")
+
+    myLogInitStart(s"OutputCommitCoordinator")
     val outputCommitCoordinator = mockOutputCommitCoordinator.getOrElse {
       new OutputCommitCoordinator(conf, isDriver)
     }
     val outputCommitCoordinatorRef = registerOrLookupEndpoint("OutputCommitCoordinator",
       new OutputCommitCoordinatorEndpoint(rpcEnv, outputCommitCoordinator))
     outputCommitCoordinator.coordinatorRef = Some(outputCommitCoordinatorRef)
+    myLogInitEnd(s"OutputCommitCoordinator")
 
     val envInstance = new SparkEnv(
       executorId,
