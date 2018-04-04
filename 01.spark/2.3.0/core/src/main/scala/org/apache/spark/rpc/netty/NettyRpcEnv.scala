@@ -462,6 +462,7 @@ private[rpc] class NettyRpcEnvFactory extends RpcEnvFactory with Logging {
         config.securityManager, config.numUsableCores)
     if (!config.clientMode) {
       val startNettyRpcEnv: Int => (NettyRpcEnv, Int) = { actualPort =>
+        myLogDebug(s"actualPort: ${actualPort}")
         nettyEnv.startServer(config.bindAddress, actualPort)
         (nettyEnv, nettyEnv.address.port)
       }
