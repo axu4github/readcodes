@@ -38,6 +38,14 @@ import org.apache.spark.util.ThreadUtils
  */
 private[netty] class Dispatcher(nettyEnv: NettyRpcEnv, numUsableCores: Int) extends Logging {
 
+  myLogDebug("""
+    new Dispatcher() to new:
+    1. endpoints: ConcurrentMap[String, EndpointData]
+    2. endpointRefs: ConcurrentMap[RpcEndpoint, RpcEndpointRef]
+    3. receivers: LinkedBlockingQueue[EndpointData]
+    4. stopped
+  """)
+
   private class EndpointData(
       val name: String,
       val endpoint: RpcEndpoint,

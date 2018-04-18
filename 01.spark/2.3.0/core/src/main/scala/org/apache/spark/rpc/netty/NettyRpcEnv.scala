@@ -52,10 +52,15 @@ private[netty] class NettyRpcEnv(
     "rpc",
     conf.getInt("spark.rpc.io.threads", 0))
 
+  myLogInitStart(s"Dispatcher")
   private val dispatcher: Dispatcher = new Dispatcher(this, numUsableCores)
+  myLogInitEnd(s"Dispatcher")
 
+  myLogInitStart(s"NettyStreamManager")
   private val streamManager = new NettyStreamManager(this)
+  myLogInitEnd(s"NettyStreamManager")
 
+  myLogInitStart(s"TransportContext")
   private val transportContext = new TransportContext(transportConf,
     new NettyRpcHandler(dispatcher, this, streamManager))
 
@@ -68,7 +73,9 @@ private[netty] class NettyRpcEnv(
     }
   }
 
+  myLogInitStart(s"clientFactory")
   private val clientFactory = transportContext.createClientFactory(createClientBootstraps())
+  myLogInitEnd(s"clientFactory")
 
   /**
    * A separate client factory for file downloads. This avoids using the same RPC handler as
@@ -80,14 +87,18 @@ private[netty] class NettyRpcEnv(
    */
   @volatile private var fileDownloadFactory: TransportClientFactory = _
 
+  myLogInitStart(s"timeoutScheduler")
   val timeoutScheduler = ThreadUtils.newDaemonSingleThreadScheduledExecutor("netty-rpc-env-timeout")
+  myLogInitEnd(s"timeoutScheduler")
 
+  myLogInitStart(s"clientConnectionExecutor")
   // Because TransportClientFactory.createClient is blocking, we need to run it in this thread pool
   // to implement non-blocking send/ask.
   // TODO: a non-blocking TransportClientFactory.createClient in future
   private[netty] val clientConnectionExecutor = ThreadUtils.newDaemonCachedThreadPool(
     "netty-rpc-connection",
     conf.getInt("spark.rpc.connect.threads", 64))
+  myLogInitEnd(s"clientConnectionExecutor")
 
   @volatile private var server: TransportServer = _
 
@@ -452,14 +463,33 @@ private[netty] object NettyRpcEnv extends Logging {
 private[rpc] class NettyRpcEnvFactory extends RpcEnvFactory with Logging {
 
   def create(config: RpcEnvConfig): RpcEnv = {
+    myLogDebug("NettyRpcEnvFactory().create(conf)")
+    myLogDebug(s"""
+      conf => RpcEnvConfig(
+          conf, name, bindAddress, advertiseAddress, port,
+          securityManager, numUsableCores, clientMode)
+    """)
+    myLogDebug(s"conf: ${config.conf}")
+    myLogDebug(s"name: ${config.name}")
+    myLogDebug(s"bindAddress: ${config.bindAddress}")
+    myLogDebug(s"advertiseAddress: ${config.advertiseAddress}")
+    myLogDebug(s"port: ${config.port}")
+    myLogDebug(s"securityManager: ${config.securityManager}")
+    myLogDebug(s"numUsableCores: ${config.numUsableCores}")
+    myLogDebug(s"clientMode: ${config.clientMode}")
+
     val sparkConf = config.conf
     // Use JavaSerializerInstance in multiple threads is safe. However, if we plan to support
     // KryoSerializer in future, we have to use ThreadLocal to store SerializerInstance
     val javaSerializerInstance =
       new JavaSerializer(sparkConf).newInstance().asInstanceOf[JavaSerializerInstance]
+
+    myLogInitStart(s"NettyRpcEnv")
     val nettyEnv =
       new NettyRpcEnv(sparkConf, javaSerializerInstance, config.advertiseAddress,
         config.securityManager, config.numUsableCores)
+    myLogInitEnd(s"NettyRpcEnv")
+
     if (!config.clientMode) {
       val startNettyRpcEnv: Int => (NettyRpcEnv, Int) = { actualPort =>
         myLogDebug(s"actualPort: ${actualPort}")
