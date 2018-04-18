@@ -24,8 +24,9 @@ if [ -n "${SPARK_HOME}" ]; then
     CMD="cp ${SPARK_HOME}/${sub}/target/${artifactId}-2.3.0.jar ${SPARK_HOME}/assembly/target/scala-2.11/jars/"
     echo "${CMD}"
     ${CMD}
-    
+
     cd -
 else
     echo "NOT SET SPARK_HOME."
 fi
+
