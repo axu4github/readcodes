@@ -1,0 +1,36 @@
+RpcEndpoint注册
+- 主要调用Dispatcher.registerRpcEndpoint方法，入参两个：name名称，集成了RpcEndpoint的endpoint类，出口是NettyRpcEndpointRef
+- 初始化一个地址RpcEndpointAddress，为了以后通过地址获取RpcEndpointRef使用；初始化一个NettyRpcEndpointRef，入参是NettyEnv和RpcEndpointAddress
+- 初始化一个EndpointData，入参是调用registerRpcEndpoint时传进来的名字name，第二个是传进来的endpoint类，第三个是刚才生成的endpointref类
+- 
+
+- endpointRef = new NettyRpcEndpointRef(new RpcEndpointAddress())
+- endpointData = new EndpointData(name, endpoint, endpointRef)
+- Dispatcher.endpoints.put(name, endpointData)
+- Dispatcher.endpointRefs.put(endpoint, endpointRef)
+- Dispatcher.receivers.offer(endpointData)
+
+
+
+- broadcast 
+- deploy
+- executor
+- memory
+- network
+- rdd
+- rpc
+- scheduler
+- shuffle
+- storage
+
+- io
+- internal
+- launcher
+- mapred
+- metrics
+- partial
+- security
+- serializer
+- status
+- ui
+- util
